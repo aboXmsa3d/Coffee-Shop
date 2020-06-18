@@ -14,8 +14,6 @@ set FLASK_APP=api.py
 $env:FLASK_APP = "api.py"
 flask run --reload
 '''
-'''
-'''
 
 app = Flask(__name__)
 setup_db(app)
@@ -119,6 +117,13 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response
+
 
 if __name__ == '__main__':
     app.run()
