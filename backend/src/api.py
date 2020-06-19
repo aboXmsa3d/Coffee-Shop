@@ -23,9 +23,10 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
-## ROUTES
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ endpoints ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 '''
 @TODO implement endpoint GET /drinks
@@ -48,6 +49,7 @@ def drinks():
         "drinks": drinks
     })
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 '''
 @TODO implement endpoint GET /drinks-detail
         it should require the 'get:drinks-detail' permission
@@ -70,7 +72,7 @@ def drinks_detail(payload):
         "drinks": drinks
     })
 
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 '''
 @TODO implement endpoint POST /drinks
         it should create a new row in the drinks table
@@ -88,19 +90,24 @@ def add_drink(payload):
     new_title = body.get('title', None)
     new_recipe = body.get('recipe', None)
 
-    drink = Drink(
-        title=new_title,
-        recipe=json.dumps(new_recipe) # write it as String
-        )
+    try:
+        drink = Drink(
+            title=new_title,
+            recipe=json.dumps(new_recipe) # write it as String
+            )
 
-    drink.insert()
+        drink.insert()
 
-    return jsonify({
-        'success': True,
-        "drinks": drink.long()
-    })
+        return jsonify({
+            'success': True,
+            "drinks": drink.long()
+        })
 
+    except BaseException:
+        abort(422)
+   
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 '''
 @TODO implement endpoint PATCH /drinks/<id>
         where <id> is the existing model id
@@ -125,18 +132,24 @@ def edit_drink(payload , drink_id):
     new_title = body.get('title', None)
     new_recipe = body.get('recipe', None)
 
-    if new_title is not None:
-        drink.title = new_title
-    if new_recipe is not None:
-        drink.recipe = json.dumps(new_recipe) # write it as String
+    try:
 
-    drink.update()
+        if new_title is not None:
+            drink.title = new_title
+        if new_recipe is not None:
+            drink.recipe = json.dumps(new_recipe) # write it as String
 
-    return jsonify({
-        'success': True,
-        "drinks": drink.long()
-    })
+        drink.update()
 
+        return jsonify({
+            'success': True,
+            "drinks": [drink.long()]
+        })
+
+    except BaseException:
+        abort(422)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 '''
 @TODO implement endpoint DELETE /drinks/<id>
         where <id> is the existing model id
@@ -155,54 +168,68 @@ def delete_drink(payload , drink_id):
     if drink is None:
         abort(404)
 
-    drink.delete()
+    try:
 
-    return jsonify({
-        'success': True,
-        "drinks": drink.long()
-    })
+        drink.delete()
+
+        return jsonify({
+            'success': True,
+            "drinks": drink.long()
+        })
+
+    except BaseException:
+        abort(422)
 
 
 
-## Error Handling
-'''
-Example error handling for unprocessable entity
-'''
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Error Handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({
-                    "success": False, 
-                    "error": 422,
-                    "message": "unprocessable"
-                    }), 422
+        'success': False,
+        'error': 422,
+        'message': 'unprocessable'
+    }), 422
 
-'''
-@TODO implement error handlers using the @app.errorhandler(error) decorator
-    each error handler should return (with approprate messages):
-             jsonify({
-                    "success": False, 
-                    "error": 404,
-                    "message": "resource not found"
-                    }), 404
 
-'''
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        'success': False,
+        'error': 404,
+        'message': 'resource not found'
+    }), 404
 
-'''
-@TODO implement error handler for 404
-    error handler should conform to general task above 
-'''
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        'success': False,
+        'error': 400,
+        'message': 'bad request'
+    }), 400
+
+
+@app.errorhandler(401)
+def Unauthorized (error):
+    return jsonify({
+        'success': False,
+        'error': 401,
+        'message': 'Unauthorized'
+    }), 401
 
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
-
 @app.errorhandler(AuthError)
 def handle_auth_error(ex):
     response = jsonify(ex.error)
     response.status_code = ex.status_code
     return response
+
 
 
 if __name__ == '__main__':
